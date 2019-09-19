@@ -1,0 +1,85 @@
+---
+title: "HW3_Min"
+author: "Jie Min"
+date: "9/17/2019"
+output: pdf_document
+---
+
+**a**
+
+```{r warning=FALSE}
+library(dplyr)
+library(tidyverse)
+url<-"http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/Sensory.dat"
+srow<-seq(1,28,3)
+
+data<-read.table(url,header=FALSE,skip=2,fill=TRUE)
+data[srow,1:5]<-data[srow,2:6]
+
+sort(rep(1:10,3)) %>%
+cbind(data)       %>%
+  select(1:6)     %>%
+  'colnames<-'(c('Item','1','2','3','4','5'))%>%
+  select(2:6)     %>%
+  summary
+```
+
+**b**
+```{r}
+url<-"http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/LongJumpData.dat"
+data<-read.table(url,skip=1,fill=TRUE) 
+try=data
+
+data[,c(1,3,5,7)]<-data[,c(1,3,5,7)]+1990
+
+c(data[,1],data[,3],data[,5],data[,7])%>%
+data_frame(c(data[,2],data[,4],data[,6],data[,8])) %>%
+  'colnames<-'(c('year','Longjump'))%>%
+  drop_na()%>%
+  summary
+
+```
+
+**c**
+```{r}
+url<-'http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/BrainandBodyWeight.dat'
+
+data<-read.table(url,skip=1,header = FALSE,fill=TRUE)
+
+c(data[,1],data[,3],data[,5])%>%
+data_frame(c(data[,2],data[,4],data[,6])) %>%
+  'colnames<-'(c('Bodywt','Brainwt'))%>%
+   drop_na()%>%
+  summary
+
+
+```
+
+**d**
+
+```{r}
+url<-'http://www2.isye.gatech.edu/~jeffwu/wuhamadabook/data/tomato.dat'
+
+
+data<- readLines(url)[c(3,4)]%>%
+    gsub(" ",',',.)%>%
+  read.table(text=.,comment.char = '*',sep=',',fill=TRUE)%>%
+  unname
+
+data<-data[,-1]%>%
+    as.matrix
+
+
+id1<-which(is.na(data[1,])==TRUE)
+id2<-which(is.na(data[2,])==TRUE)
+
+data[1,-id1]%>%
+rbind(data[2,-id2])%>% 
+'rownames<-'(c('Ife#1','PusaEarlyDwarf'))%>%
+'colnames<-'(c(10000,10000,10000,20000,20000,20000,30000,30000,30000))%>%
+  as.data.frame%>%
+  summary
+
+
+```
+
