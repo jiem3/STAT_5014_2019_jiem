@@ -1,0 +1,136 @@
+---
+title: "Hw4"
+author: "Jie Min"
+date: "9/24/2019"
+output: pdf_document
+---
+
+## Problem 4
+
+After reading these two links I discovered a good coding style can help others quickly understand what I was doing, which is very important in teamwork. I will check my codes every time after coding and correct my bad coding style.  
+
+
+## Problem 5
+```{r eval=F, echo=T}
+library(lintr)
+lint(filename = "C:\\courses\\rpackage\\STAT_5014_2019_jiem\\HW3_Min.Rmd")
+```
+
+I need to change all single quotes to  double quotes, put space after commas, put spaces around infix operators, and use '<-' instead of '=' in coding. 
+
+## Problem 6
+```{r,echo=FALSE}
+data <- readRDS("C:\\Users\\Jie Min\\Documents\\GitHub\\STAT_5014_Fall_2019\\homework\\HW4_data.rds")
+```
+```{r}
+.summary_dev <- function(data){
+  re <- NULL
+  obs <- unique(data[, 1])
+  for(i in 1:max(obs)){
+  
+  idx <- which(data[, 1]==i)
+  n <- length(idx)
+  mean1 <- mean(data[idx, 2])
+  mean2 <- mean(data[idx, 3])
+  sd1 <- sd(data[idx, 2])
+  sd2 <- sd(data[idx, 2])
+  corr <- cor(data[idx, 2],data[idx, 3])
+  r <- cbind(i, mean1, mean2, sd1, sd2, corr)
+  re <- rbind(re, r)
+  
+  }
+  colnames(re) <- cbind(c("Observer", "dev1mean", "dev2mean", "dev1sd", "dev2sd", "correlation"))
+  resut <- as.data.frame(re)
+  return(resut)
+  }
+```
+```{r,echo=FALSE}
+library(ggplot2)
+summ <- .summary_dev(data)
+print(summ)
+
+par(mfrow=c(1,2))
+boxplot(summ[,2], ylab='dev1mean')
+boxplot(summ[,3], ylab='dev2mean')
+
+plot1 <- ggplot(summ, aes(x=Observer,y=dev1sd))+geom_violin(trim=FALSE)
+plot2 <- ggplot(summ, aes(x=Observer,y=dev2sd))+geom_violin(trim=FALSE)
+gridExtra::grid.arrange( plot1, plot2, ncol=2)
+```
+
+
+I created side-by-side box plots and violin plots because the absolute value of mean and sd are very different between dev1 and dev2 so if I put two box plots(violin plots) together with same ylim, each box would be too small.
+
+
+## Problem 7
+
+```{r}
+.Reimann_int <- function(width){
+    grid <- seq(0, 1, width)
+    y <- exp(-(grid^2)/2)
+    lefts <- sum(width*y[1:(length(y)-1)])
+    rights <- sum(width*y[2:length(y)])
+    re <- (lefts+rights)/2
+    return(re) 
+}
+
+width <- c(0.5, 0.1, 0.05, 0.01, 0.005, 0.001)
+re <- NULL
+for(i in 1:length(width)){
+  r <- .Reimann_int(width[i])
+  re <- cbind(re, r)
+}
+
+true <- 0.855624
+err <- 10^(-6)
+er <- abs(true-re)
+re <- rbind(re,er)
+colnames(re) <- c('0.5', '0.1', '0.05', '0.01', '0.005', '0.001')
+rownames(re) <- c('Sum', 'error')
+print(re)
+id <- width[which(er<=err)]
+```
+
+Among my choices, the width that small enough to obtain an answer within 1e^-6 of the analytic solution is 0.005 and 0.001.
+
+
+
+## Problem 8
+
+
+$f(x) = 3^x - sin(x) + cos(5x)$
+
+$f'(x)=xlog3-cox(x)-5sin(5x)$
+
+```{r}
+.find_root <- function(x1, tolerance=10^(-5)){
+  
+  error <- 1
+  xx <- x1
+  while(error>=tolerance){
+  x <- x1
+  f <- 3^x-sin(x)+cos(5*x)
+  fd <- x*log(3)-cos(x)-5*cos(5*x)
+  x1 <- x-f/fd
+  f1 <- 3^x1-sin(x1)+cos(5*x1)
+  error <- abs(f1-0)
+  xx <- c(xx,x1)  
+  }
+  
+  return(xx)
+}
+
+
+fx <- .find_root(x1=-1)
+```
+```{r,echo=FALSE}
+plot(fx,type='l', ylab='x-value')
+final <- fx[length(fx)]
+ma <- max(fx)
+mi <- min(fx)
+knitr::kable(cbind(final, '[-26.27,2.32]', 10^(-5)), col.names=c('final x value', 'x interval', 'tolerance'))
+```
+
+Starting from x=-1, with tolerance = 1e-5, the final x-value and interval is listed in the table above.
+
+
