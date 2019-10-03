@@ -1,0 +1,158 @@
+---
+title: "HW6_Min_Jie"
+author: "Jie Min"
+output: html_document
+---
+
+## Problem 2
+```{r,echo=FALSE}
+library()
+set.seed(12345)
+y <- seq(from=1, to=100, length.out = 1e8) + rnorm(1e8)
+```
+
+**a**
+```{r eval=F, echo=T}
+system.time({
+  asum <- 0
+  meany <- mean(y)
+  for( i in 1:length(y)){
+    asum <- asum + (y[i]- mean(y))^2
+  }
+})
+
+print(asum)
+```
+
+I tried to run the code but it really takes a long time for my laptop to run, and I waited for more than 20 minutes it didn't give me the result. When I tried to stop the Rstudio crashed. Therefore I only put my code here. I am sorry for that.
+
+**b**
+```{r}
+system.time({
+  meany_v <- mean(y)
+  diff <- (y-meany_v)^2
+  bsum <- t(diff) %*% diff
+})
+
+print(bsum)
+```
+
+## Problem 3
+
+```{r,echo=FALSE}
+    set.seed(1256)
+    theta <- as.matrix(c(1,2),nrow=2)
+    X <- cbind(1,rep(1:10,10))
+    h <- X%*%theta+rnorm(100,0,0.2)
+```
+
+```{r}
+thetanew <- matrix(c(0,0), nrow = 2)
+alpha <- 0.01
+tol <- 0.0001
+diffr <- c(10,10)
+while(diffr[1] > tol | diffr[2] > tol){
+  thetanew[1] <- theta[1] - alpha * mean(X %*% theta - h)
+  thetanew[2] <- theta[2] - alpha * mean((X %*% theta - h) * X[, 2])
+  diffr <- abs(thetanew - theta)
+  theta<-thetanew
+   }
+
+lm(h ~ 0 + X)
+
+thetanew
+```
+
+We can see from the result that the above two methods have similar results. The tolerance I used is 0.0001 and $\alpha$ is 0.01.
+
+
+## Problem 4
+
+```{r}
+beta_hat <- solve(t(X) %*% X) %*% t(X) %*% h
+print(beta_hat)
+```
+
+I am estimating $\boldsymbol \beta$ matrix in a regression model $\boldsymbol Y=\boldsymbol X\boldsymbol \beta+\boldsymbol \epsilon$ using least square estimation.
+
+To make the calculation faster, I can do
+
+```{r}
+beta_hat_1<-solve(t(X)%*%X,t(X)%*%h)
+print(beta_hat_1)
+```
+
+By doing this I am diriectly solving the equation $X^TX\beta=X^TY$
+
+## Problem 5
+```{r data, echo=FALSE}
+
+    set.seed(12456) 
+    
+    G <- matrix(sample(c(0,0.5,1),size=16000,replace=T),ncol=10)
+    R <- cor(G) # R: 10 * 10 correlation matrix of G
+    C <- kronecker(R, diag(1600)) # C is a 16000 * 16000 block diagonal matrix
+    id <- sample(1:16000,size=932,replace=F)
+    q <- sample(c(0,0.5,1),size=15068,replace=T) # vector of length 15068
+    A <- C[id, -id] # matrix of dimension 932 * 15068
+    B <- C[-id, -id] # matrix of dimension 15068 * 15068
+    p <- runif(932,0,1)
+    r <- runif(15068,0,1)
+    C<-NULL #save some memory space
+```
+
+**a**
+
+A matrix is 107.1Mb and B matrix is 1.7Gb. Without tricks, my rstudio will take a long time to run and crash.
+
+
+**b**
+
+The B matrix is made of 932 small diagonal matrices. I would like to calculate $AB^{-1}$ based on those small diagonal matrices.
+
+**c**
+
+```{r}
+calculate_y <- function(){
+  idx <- sort(id)
+  get_B_id <- function(i,idx){
+     if(i == 1){
+        b_tid <- 1:(idx[i] - i)
+                }else if(i == length(idx)){
+        b_tid <- (idx[i-1] - (i-1) + 1):(16000 - i)
+                }else{
+        if((idx[i] - idx[i-1]) == 1){
+        b_tid <- 0
+                }else {
+        b_tid <- (idx[i-1] - (i-1) + 1):(idx[i] - i)
+          } 
+        }  
+      }
+  savelb <- sapply(1:length(idx), get_B_id, idx)
+  qr <- q - r
+  B_inv <- function(i, B){
+      startidq <- savelb[[i]][1]
+      endidq <- savelb[[i]][length(savelb[[i]])]
+      if(startidq > 0){
+          Bi_s <- solve(B[startidq:endidq, startidq:endidq])
+          A_Bii <- (A[, startidq:endidq] %*% Bi_s)
+       }else{
+          A_Bii <- -1000
+     }
+  }
+
+    ABqrl <- sapply(1:932, B_inv, B)
+    ABf <- NULL
+    for(i in 1:932){
+        if(ABqrl[[i]][1] != -1000){
+            ABf <- cbind(ABf, ABqrl[[i]])}
+        }
+  ABfq <- ABf %*% qr
+  y <- p + ABfq
+}
+```
+```{r}
+system.time({calculate_y()})
+```
+
+
